@@ -1,0 +1,239 @@
+---
+title: "Modelos Animais em Pesquisa Biomédica - Replicação de Artigo Científico"
+format: pdf
+engine: knitr
+description: |
+  Projeto de replicação de replicação de experimento baseado no artigo https://doi.org/10.1016/j.jbior.2022.100945
+  em que usaremos um desfecho e uma variável para replicar o estudo com modificações de metdologia que fazer-se-ão
+  necessárias na implementação da pesquisa. 
+  Para o experimento foi seleciado o desfecho comparativo de KO e controle de mutação do gene enthd2
+authors:
+  - name: "Lincolm Ferreira de Aguiar"
+    email: "lincolm@bioaiq.com"
+    affiliation: "Universidade Federal do Rio Grande do Sul - Biomedicina - Modelos Animais em Pesquisa Biomédica"
+  - name: "Gabriel Morales Chiapin"
+    email: "gabriel.morchi@gmail.com"
+    affiliation: "Universidade Federal do Rio Grande do Sul - Biomedicina - Modelos Animais em Pesquisa Biomédica"
+date: "2025-12-03"
+categories: ["R", "Data Science", "Ciências Biológicas", "Biomedicina", "Danio rerio", "CRISPR"]
+tags: ["R", "Data Science", "Ciências Biológicas", "Biomedicina"]
+---
+```{r}
+#| label: setup
+#| include: false
+
+# Este é um script em Qaurto, uma versão melhorada de markdown para o R. Com o quarto os "chunks" (blocos de código R que aparece em cinza, como esse) são nomeados e alguns especiais. O chunk nomeado como setup é executado automaticamente pelo Quarto para qualquer outro chunk após.
+
+# Com o knitr é bom fixar a pasta raiz do projeto para caso de qualquer chamada de outro recurso do projeto.
+knitr::opts_knit$set(root.dir = here::here()) 
+```
+
+```{r}
+#| label: packages
+#| include: false
+
+# Vamos definir os pacotes que usaremos e são:
+#  pwr: funcões para poder estatistico usando métodos de Cohen (1988)
+#  effectsize: um pacote do R para calcular o tamanho de efeito usando o fator d de Cohen
+#  rstatix: para fazer calculos de ANOVA, Kruskal, Wilcox e t. Nesse projeto, a ANOVA
+#  emmeans: para comparar o efeito entre as médias dos grupos sem vies de covariações
+#  tidyverse: um pacote com várias funcões para filtrar, processar e analisar dados.
+#  readr: nesse projeto, usado apenas para o download do CSV do SJR como data.frame.
+#  ggplot2: Gramar Of Graphics 2. Um conjunto de funções no R para gráficos
+#  dplyr: traz vários método de filtrar e pós-processamento do dataset, por exemplo, filter()
+packages <- c("pwr", "effectsize","rstatix","emmeans","tidyverse", "readr", "ggplot2", "dplyr")
+
+# Temos os pacotes, então precisamos dizer ao R para carregá-los na sessõa para estarem disponíveis
+# para uso. Mas, só vamos instalar os pacotes que não estão instalados. Se já estiverem instalados
+# so carregar para a sessão do R.
+package.check <- lapply(
+  packages,
+  FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE, ask = FALSE)
+    }
+    library(x, character.only = TRUE)
+  }
+)
+```
+
+```{r}
+#| label: calculo tamanho amostral
+#| echo: false
+
+poder_estatistico <- 0.8 # 1-β, valor estimado para o estudo. 
+nivel_confianca <- 0.05 # um nível de confianca de 0.05 (5%)
+numero_grupos <- 3 # o grupo KO se subdivide em: Classe 1, Classe 2 e Classe 3 quanto á má formação por CRISPR
+cohen_f <- 0.25 # O f de Cohen é o quão grande são as medidas de dispersão entre as médias
+                # pois temos 2 pools (k=2) em relaçao a variabilidade dentro dos grupos
+
+# Temos dois grupos: KO e WT com 3 grupos de teste com aproximadamente 40 animais.
+# Isso nos permite apenas o método com ANOVA, pois o Test t é para até dois grupos.
+# Temos dois grupos e nos grupos temos 3 pools de 40 aniais, o nosso n é 3, só temos
+# ANOVA para o cálculo amostra.
+d <- pwr.anova.test(k = numero_grupos, f = cohen_f, sig.level = nivel_confianca, power = poder_estatistico)
+plot(d)
+```
+
+```{r}
+#| label: definicoes
+
+# Número de animais que usaremos no estudo.
+prj_n <- 153
+prj_groups <- c("KO", "WT")
+```
+
+```{r}
+#| label: randomização
+
+# fixamos o 2025 para ter reprodutibilidade. Em qualquer lugar que esse script rodar, 
+# irá produzir a mesma sequencia de amostra.
+set.seed(2025)
+
+# Vamos alocar cada ovo de Danio rerio em de forma randomizada entre os grupos KO e WT. 
+# Para isso, criamos uma sequencia
+embryos <- paste0("embryo_", 1:prj_n) 
+
+# E vamos alocar os animais nos grupos pela sequencia descrita nesse algoritmo.
+# Vamos separar entre WT e KO com (prj_n / 2) cada
+group_WT <- sample(embryos, size = prj_n / 2)
+
+# O grupo KO receberá os embrioes de embryos que não estão alocados no grupo WT
+group_KO <- setdiff(embryos, group_WT)
+
+# Vamos transformar isso em uma forma apresentável (via uma data.frame)
+# KO=U
+# WT=G
+# A randomização aqui não tem efeito de cegamento, apenas alocação não enviesada de ovos por grupos
+groups <- data.frame(
+  embryo = embryos,
+  group = ifelse(embryos %in% group_WT, "G", "U")
+)
+# E imprimimos o data.frame
+groups
+```
+
+```{r}
+#| label: tamanho de efeito artigo original
+
+# Valor de p no experimento original
+p <- 0.057
+
+# número de embriões em cada grupo
+df <- 40
+  
+# O teste é bicaudal porque as autoras apenas medem se há diferença, não se é maior ou menor o controle.
+t <- qt(p/2, df, lower.tail = FALSE)  # teste bicaudal por isso o p / 2 (direito e esquerdo)
+t
+```
+
+```{r}
+#| label: tamanho do efeito
+
+# Estimando o tamanho de efeito a a partir dos dados do artigo.
+# Usando a funcão t_to_d do pacote effectsize podemos calcular o tamamho de efeito 
+# e o intervalo de confiança.
+effectsize::t_to_d(t, df = df)
+```
+
+```{r}
+#| label: tamanho de amostra
+
+# Tamanho de amostra com base no tamanho de efeito do artigo.
+p <- pwr.t.test(d = 0.62, sig.level = 0.05, power = 0.80, type = "two.sample")
+p
+
+plot(p)
+```
+
+
+```{r}
+#| label: sjr
+#| warning: false
+
+# A coluna de interesse "SJR Best Quartile" tem caracteres complicados para lidar com R, entào
+# vamos renomear para simplicar as análises seguintes
+df_sjr <- read_csv2("https://www.scimagojr.com/journalrank.php?out=xls")
+df_sjr <- df_sjr |>
+  rename(
+    best_quartile = `SJR Best Quartile`
+  )
+```
+
+
+```{r}
+#| label: sjr_fator_impacto
+
+# Vamos criar um "data.frame" a partir de um filtro de busca no dataset.
+# Os filtros serão por todas as revistas que apresentam classificação, ou seja
+# a coluna, agora renomeada, best_quartile, não tenha NA e não seja igual a '-'
+# contabilizamos por best_quartile e para mostrar em valores percentuais
+# aplicamos uma operação de mutate para substituir o valor do count por
+# frequencia relativa (n / sum(n)) de cada quartil.
+quart_counts <- df_sjr |>
+  filter(!is.na(best_quartile), best_quartile != "-") |>
+  count(best_quartile) |>
+  mutate(freq = n / sum(n))
+
+# Usamos o ggplot para criar o gráfico de colunas e aplicamos configurações
+# no gráfico para colocar todas as colunas em cinza, mas a coluna Q2, que é
+# a coluna de interesse ficar na cor laranja. Poderiamos usar qualquer cor
+# inclusive em códigos RGB, mas para simplificar, vamos usar nomes das cores no R
+# e temos: Q2 em laranja e todas as demais em cinza a 70%
+# No ggplot2, usamos a função aes (de aesthetics) para formatar o gráfico. Com aesthetics,
+# iremos de fato 'formatar' o gráfico. Por exemplo: do dataset, qual coluna usaremos para
+# o eixo x, e qual o eixo y. E assim temos: x = best_quartile (se não tivesse renomeado, seria
+# só com "escapes" para usar o nome), em y usaremos a coluna freq (criada na função mutate).
+# E dizemos mais: fill (preencher), iremos preencher apenas a coluna best_quartile onde o label for Q2
+# Mas para que as colunas fiquem com uma cor, usaremos o modificador scale_fill_manual() com apenas
+# duas cores, pois a Q2 o ggplot irá colorir, as demais serão na cor "nao selecionada" no caso gray70
+ggplot(quart_counts, aes(x = best_quartile, y = freq, fill = best_quartile == "Q2")) +
+  geom_col() + # gráfico de barras (col=column)
+  scale_y_continuous(labels = scales::percent_format()) + # vamos formar o eixy Y para valores em percentuais
+  scale_fill_manual(values = c("grey70", "orange")) + # aqui dizemos qual cor para as colunas
+  labs(
+    title = "Revistas por Quartil SJR",
+    x = "Quartil SJR",
+    y = "Percentual de Revistas"
+  ) +
+  theme_minimal() + # auto explicativo
+  theme(plot.title = element_text(hjust = 0.5)) + #aqui ajustamos o titulo para ficar centralizado
+  theme(legend.position = "none") # não queremos legenda no gráfico
+```
+
+```{r}
+#| label: none
+#| echo: false
+#| warning: false
+
+value <- 0.969
+
+top10 <- df_sjr |> 
+  filter(Areas == "Biochemistry, Genetics and Molecular Biology") |>
+  slice_max(SJR, n = 20)
+
+# Advances in Biological Regulation
+avd <- df_sjr |>
+  filter(Title == "Advances in Biological Regulation")
+
+target_sjr <- 0.969
+
+top10$target <- ifelse(top10$SJR == target_sjr, "Advances in Biological Regulation", "Top20")
+
+ggplot(top10, aes(x = reorder(Title, SJR), y = SJR, fill = target)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("Top10" = "grey70","Advances in Biological Regulation" = "red")) +
+  labs(
+    title = "SJR de Advances in Biological Regulation Comparado aos Top 20",
+    x = "Revista",
+    y = "SJR"
+  ) +
+  theme_minimal()
+```
+
+fdasf
+
+
+
+The `echo: false` option disables the printing of code (only output is displayed).
