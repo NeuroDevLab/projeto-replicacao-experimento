@@ -68,10 +68,7 @@ numero_grupos <- 2 # o grupo KO se subdivide em: Classe 1, Classe 2 e Classe 3 q
 cohen_f <- 0.5 # O f de Cohen é o quão grande são as medidas de dispersão entre as médias
                 # pois temos 2 pools (k=2) em relaçao a variabilidade dentro dos grupos
 
-# Temos dois grupos: KO e WT com 3 grupos de teste com aproximadamente 40 animais.
-# Isso nos permite apenas o método com ANOVA, pois o Test t é para até dois grupos.
-# Temos dois grupos e nos grupos temos 3 pools de 40 aniais, o nosso n é 3, só temos
-# ANOVA para o cálculo amostra.
+# Test t para o cálculo amostra porque temos 2 groups (KO e WT)
 d <- pwr.t.test(d = cohen_f, sig.level = nivel_confianca, power = poder_estatistico, type = "two.sample", alternative = "two.sided")
 plot(d)
 ```
@@ -135,16 +132,6 @@ t
 # Usando a funcão t_to_d do pacote effectsize podemos calcular o tamamho de efeito 
 # e o intervalo de confiança.
 effectsize::t_to_d(t, df = df)
-```
-
-```{r}
-#| label: tamanho de amostra
-
-# Tamanho de amostra com base no tamanho de efeito do artigo.
-p <- pwr.t.test(d = 0.62, sig.level = 0.05, power = 0.80, type = "two.sample")
-p
-
-plot(p)
 ```
 
 
