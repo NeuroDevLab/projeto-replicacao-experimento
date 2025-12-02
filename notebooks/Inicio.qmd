@@ -1,6 +1,6 @@
 ---
 title: "Modelos Animais em Pesquisa Biomédica - Replicação de Artigo Científico"
-format: pdf
+format: html
 engine: knitr
 description: |
   Projeto de replicação de replicação de experimento baseado no artigo https://doi.org/10.1016/j.jbior.2022.100945
@@ -60,6 +60,7 @@ package.check <- lapply(
 ```{r}
 #| label: calculo tamanho amostral
 #| echo: false
+#| warning: false
 
 poder_estatistico <- 0.8 # 1-β, valor estimado para o estudo. 
 nivel_confianca <- 0.05 # um nível de confianca de 0.05 (5%)
