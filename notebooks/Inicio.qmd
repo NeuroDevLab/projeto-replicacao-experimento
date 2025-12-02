@@ -76,8 +76,8 @@ plot(d)
 ```{r}
 #| label: definicoes
 
-# Número de animais que usaremos no estudo.
-prj_n <- 64
+# Número de animais que usaremos no estudo. Onde é n = 64 (do cálculo do tamanho amostral) x 2 grupos
+prj_n <- 64 * 2
 prj_groups <- c("KO", "WT")
 ```
 
