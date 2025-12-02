@@ -232,8 +232,3 @@ ggplot(top10, aes(x = reorder(Title, SJR), y = SJR, fill = target)) +
   theme_minimal()
 ```
 
-fdasf
-
-
-
-The `echo: false` option disables the printing of code (only output is displayed).
