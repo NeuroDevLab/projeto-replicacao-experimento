@@ -64,15 +64,15 @@ package.check <- lapply(
 
 poder_estatistico <- 0.8 # 1-β, valor estimado para o estudo. 
 nivel_confianca <- 0.05 # um nível de confianca de 0.05 (5%)
-numero_grupos <- 3 # o grupo KO se subdivide em: Classe 1, Classe 2 e Classe 3 quanto á má formação por CRISPR
-cohen_f <- 0.25 # O f de Cohen é o quão grande são as medidas de dispersão entre as médias
+numero_grupos <- 2 # o grupo KO se subdivide em: Classe 1, Classe 2 e Classe 3 quanto á má formação por CRISPR
+cohen_f <- 0.5 # O f de Cohen é o quão grande são as medidas de dispersão entre as médias
                 # pois temos 2 pools (k=2) em relaçao a variabilidade dentro dos grupos
 
 # Temos dois grupos: KO e WT com 3 grupos de teste com aproximadamente 40 animais.
 # Isso nos permite apenas o método com ANOVA, pois o Test t é para até dois grupos.
 # Temos dois grupos e nos grupos temos 3 pools de 40 aniais, o nosso n é 3, só temos
 # ANOVA para o cálculo amostra.
-d <- pwr.anova.test(k = numero_grupos, f = cohen_f, sig.level = nivel_confianca, power = poder_estatistico)
+d <- pwr.t.test(d = cohen_f, sig.level = nivel_confianca, power = poder_estatistico, type = "two.sample", alternative = "two.sided")
 plot(d)
 ```
 
@@ -80,7 +80,7 @@ plot(d)
 #| label: definicoes
 
 # Número de animais que usaremos no estudo.
-prj_n <- 153
+prj_n <- 64
 prj_groups <- c("KO", "WT")
 ```
 
