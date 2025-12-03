@@ -68,6 +68,15 @@ numero_grupos <- 2 # o grupo KO se subdivide em: Classe 1, Classe 2 e Classe 3 q
 cohen_f <- 0.5 # O f de Cohen é o quão grande são as medidas de dispersão entre as médias
                 # pois temos 2 pools (k=2) em relaçao a variabilidade dentro dos grupos
 
+# Sobre o uso de pool.
+# Com 64 animais, nõo precisamos de pool e podemos usar o equipamento QuantStudio da Applied Biosystems
+# disponível no laboratório Multi-usuário do ICBS, com acesso por agendamento.
+# Com 64 por grupo, podemos ter extrações de RNA relativamente baixas, mas com o numero de animais 
+# é mais imporante a identidade (variabilidade) de animal por experimento. A sensibilidade estimada do 
+# QuantStudio é de 1 a 10 cópias de DNA. 
+# Optamos, por hora, em usar pool de animais.
+# https://www.ufrgs.br/agendamentoderecursos/Web/dashboard.php
+
 # Test t para o cálculo amostra porque temos 2 groups (KO e WT)
 d <- pwr.t.test(d = cohen_f, sig.level = nivel_confianca, power = poder_estatistico, type = "two.sample", alternative = "two.sided")
 plot(d)
