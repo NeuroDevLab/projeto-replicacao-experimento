@@ -59,7 +59,6 @@ package.check <- lapply(
 
 ```{r}
 #| label: calculo tamanho amostral
-#| echo: false
 #| warning: false
 
 poder_estatistico <- 0.8 # 1-β, valor estimado para o estudo. 
@@ -146,11 +145,30 @@ effectsize::t_to_d(t, df = df)
 
 ```{r}
 #| label: sjr
+#| include: false
 #| warning: false
 
-# A coluna de interesse "SJR Best Quartile" tem caracteres complicados para lidar com R, entào
-# vamos renomear para simplicar as análises seguintes
-df_sjr <- read_csv2("https://www.scimagojr.com/journalrank.php?out=xls")
+dest_folder <- "data/"
+sjrcsv <- 'sjr.rds'
+
+if(!dir.exists(dest_folder)) {
+  dir.create(dest_folder)
+}
+
+# Só vamos baixar o csv se ele não estiver sido baixado anteriormente
+if(!file.exists(paste0(dest_folder, '/', sjrcsv))) {
+  # A coluna de interesse "SJR Best Quartile" tem caracteres complicados para lidar com R, entào
+  # vamos renomear para simplicar as análises seguintes
+  df_sjr <- read_csv2("https://www.scimagojr.com/journalrank.php?out=xls")
+  
+  # Esse passo é importante para permitir que as execuções seguintes leiam o objeto do R e não o CSV.
+  # Vamos carregar o "csv" diretamente para o R com o loadRDS()
+  saveRDS(df_sjr, file.path(dest_folder, sjrcsv))
+}
+# E aqui carregamos o rds naturalmente e ele criará a variável df_sjr com o conteudo do csv já
+# em formato data.frame
+df_sjr <- readRDS(file.path(dest_folder, sjrcsv))
+
 df_sjr <- df_sjr |>
   rename(
     best_quartile = `SJR Best Quartile`
