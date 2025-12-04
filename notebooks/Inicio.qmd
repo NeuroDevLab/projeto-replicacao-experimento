@@ -35,7 +35,7 @@ knitr::opts_knit$set(root.dir = here::here())
 # Vamos definir os pacotes que usaremos e são:
 #  pwr: funcões para poder estatistico usando métodos de Cohen (1988)
 #  effectsize: um pacote do R para calcular o tamanho de efeito usando o fator d de Cohen
-#  rstatix: para fazer calculos de ANOVA, Kruskal, Wilcox e t. Nesse projeto, a ANOVA
+#  rstatix: para fazer calculos de ANOVA, Kruskal, Wilcox e t. Nesse projeto, a Test t
 #  emmeans: para comparar o efeito entre as médias dos grupos sem vies de covariações
 #  tidyverse: um pacote com várias funcões para filtrar, processar e analisar dados.
 #  readr: nesse projeto, usado apenas para o download do CSV do SJR como data.frame.
@@ -73,8 +73,7 @@ cohen_f <- 0.5 # O f de Cohen é o quão grande são as medidas de dispersão en
 # Com 64 por grupo, podemos ter extrações de RNA relativamente baixas, mas com o numero de animais 
 # é mais imporante a identidade (variabilidade) de animal por experimento. A sensibilidade estimada do 
 # QuantStudio é de 1 a 10 cópias de DNA. 
-# Optamos, por hora, em usar pool de animais.
-# https://www.ufrgs.br/agendamentoderecursos/Web/dashboard.php
+# Optamos, por hora, em usar NÃO usar pool de animais.
 
 # Test t para o cálculo amostra porque temos 2 groups (KO e WT)
 d <- pwr.t.test(d = cohen_f, sig.level = nivel_confianca, power = poder_estatistico, type = "two.sample", alternative = "two.sided")
@@ -148,9 +147,17 @@ effectsize::t_to_d(t, df = df)
 #| include: false
 #| warning: false
 
+# Nessa pasta iremos baixar o CSV do JSR para fazer a verificação do gráfico.
 dest_folder <- "data/"
+
+# E daremos um nome ao arquivo. Vamos salvar o CSV como objeto direto do R, por
+# isso a extensão rds
 sjrcsv <- 'sjr.rds'
 
+# Precisamos criar a pasta, mas somente se ela não existir. Simples isso, mas
+# em todas as linguagens de programaçao (o R é uma linguagem de muito alto nivel)
+# você precisa dizer o óbvio. Se não tem cria. Se não fizermos isso, o R vai dar
+# exceção que a pasta não existe. É assim com Java, C, python, PHP, Go, Assembler...
 if(!dir.exists(dest_folder)) {
   dir.create(dest_folder)
 }
@@ -169,6 +176,11 @@ if(!file.exists(paste0(dest_folder, '/', sjrcsv))) {
 # em formato data.frame
 df_sjr <- readRDS(file.path(dest_folder, sjrcsv))
 
+# Aqui estamos usando o filtro do dplyr em sintaxe nova. Os caracteres |> juntos
+# Denotam uma instrução "pipe" ou seja, passe o resultado do ultimo comando
+# para o comando seguintes.
+# Nesse caso, vamos renomear uma coluna que tem espaços para um nome mais 
+# programming friendly: sem espaços e minúsculos.
 df_sjr <- df_sjr |>
   rename(
     best_quartile = `SJR Best Quartile`
@@ -185,6 +197,8 @@ df_sjr <- df_sjr |>
 # contabilizamos por best_quartile e para mostrar em valores percentuais
 # aplicamos uma operação de mutate para substituir o valor do count por
 # frequencia relativa (n / sum(n)) de cada quartil.
+# Na ultima funçao, a mutate, ela vai vriar a coluna freq como resulado do cáculo do n / sum(n)
+# para cada agrupamento do count. Isso permite que transformemos 39 em 200 vire 19.5 e formatamos em %
 quart_counts <- df_sjr |>
   filter(!is.na(best_quartile), best_quartile != "-") |>
   count(best_quartile) |>
