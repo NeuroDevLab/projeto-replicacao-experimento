@@ -6,5 +6,5 @@ Levantamento inicial disponível em: <https://neurodevlab.github.io/projeto-repl
 
 <div>
   Apoio:
-  <a href="https://bioaiq.com"><img src="https://bioaiq.com/images/b3e02a59e86a8d20115385b9182562e5_logo.svg" alt="Bioaiq" width="180"/></a>
+  <a href="https://bioaiq.com">BioAIQ</a>
 </div>
